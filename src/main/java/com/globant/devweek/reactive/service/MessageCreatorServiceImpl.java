@@ -21,12 +21,12 @@ public class MessageCreatorServiceImpl implements MessageService {
 
     @Override
     public void deliverMessage(String user, String message) {
-        MessageRepository.createMessage(new Message(message));
+        messageRepository.save(new Message(message));
     }
 
     @Scheduled(fixedRate = 5000, initialDelay = 5000)
     public void deliverMessage() {
         log.info("Delivering test message");
-        MessageRepository.createMessage(new Message(String.format("Test Message %d", counter.incrementAndGet())));
+       messageRepository.save(new Message(String.format("Test Message %d", counter.incrementAndGet())));
     }
 }
