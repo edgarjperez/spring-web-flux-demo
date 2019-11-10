@@ -10,12 +10,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Log4j2
 @Component
-public class MessageCreatorServiceImpl implements MessageService {
+public class MessageScheduler implements MessageService {
 
     private final MessageRepository messageRepository;
     private AtomicInteger counter = new AtomicInteger(0);
 
-    public MessageCreatorServiceImpl(MessageRepository messageRepository) {
+    public MessageScheduler(MessageRepository messageRepository) {
         this.messageRepository = messageRepository;
     }
 
@@ -27,6 +27,7 @@ public class MessageCreatorServiceImpl implements MessageService {
     @Scheduled(fixedRate = 5000, initialDelay = 5000)
     public void deliverMessage() {
         log.info("Delivering test message");
-       messageRepository.save(new Message(String.format("Test Message %d", counter.incrementAndGet())));
+       messageRepository.save(new Message(String.format("Test Message %d", counter.incrementAndGet())))
+               .subscribe();
     }
 }

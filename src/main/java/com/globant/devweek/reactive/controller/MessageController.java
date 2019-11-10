@@ -2,25 +2,23 @@ package com.globant.devweek.reactive.controller;
 
 import com.globant.devweek.reactive.domain.Message;
 import com.globant.devweek.reactive.repository.MessageRepository;
+import com.globant.devweek.reactive.service.DefaultMessage;
+import com.globant.devweek.reactive.service.KafkaService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.codec.ServerSentEvent;
+import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.time.Duration;
-
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/messages")
 public class MessageController {
 
     private final MessageRepository messageRepository;
-
-    public MessageController(MessageRepository messageRepository) {
-        this.messageRepository = messageRepository;
-    }
+    private final DefaultMessage defaultMessage;
+    private final KafkaService kafkaService;
 
     @GetMapping("/{id}")
     private Mono<Message> getEmployeeById(@PathVariable String id) {
@@ -28,11 +26,15 @@ public class MessageController {
     }
 
     @GetMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    private Flux<Message> getAllEmployees() {
-        return Flux.interval(Duration.ofSeconds(1))
-                .log()
-                .map((val) -> new Message(String.format("Message %d", val)))
-                .take(20);
+    private Flux<ServerSentEvent<Message>> getAllMessages() {
+        return kafkaService.getEventPublisher()
+                .map(stringServerSentEvent -> kafkaService.jsonToMessage(stringServerSentEvent.data()))
+                .map(kafkaService::matchToServerSentEvent);
+    }
+
+    @PostMapping
+    private void saveMessage(@RequestBody Message message) {
+        defaultMessage.saveMessage(new Message(message.getMessage()));
     }
 
 }
