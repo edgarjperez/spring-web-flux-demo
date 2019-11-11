@@ -1,28 +1,25 @@
 package com.globant.devweek.reactive.handler;
 
 import com.globant.devweek.reactive.domain.Message;
-import com.globant.devweek.reactive.domain.MessageEvent;
 import com.globant.devweek.reactive.repository.MessageRepository;
+import com.globant.devweek.reactive.service.KafkaService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.time.Duration;
-
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.TEXT_EVENT_STREAM;
 
 @Component
+@RequiredArgsConstructor
 public class MessageHandler {
 
-    private MessageRepository repository;
-
-    public MessageHandler(MessageRepository repository) {
-        this.repository = repository;
-    }
+    private final MessageRepository repository;
+    private final KafkaService kafkaService;
 
     public Mono<ServerResponse> getAllMessages(ServerRequest request) {
         Flux<Message> messages = repository.findAll();
@@ -42,10 +39,13 @@ public class MessageHandler {
 
     public Mono<ServerResponse> saveMessage(ServerRequest request) {
         return request.bodyToMono(Message.class)
-                .flatMap(message ->
-                        ServerResponse.status(CREATED)
-                                .contentType(APPLICATION_JSON)
-                                .body(repository.save(message), Message.class));
+                .flatMap(repository::save)
+                .flatMap(message -> {
+                    kafkaService.saveMessage(message);
+                    return ServerResponse.status(CREATED)
+                            .contentType(APPLICATION_JSON)
+                            .body(Mono.just(message), Message.class);
+                });
     }
 
     public Mono<ServerResponse> updateMessage(ServerRequest request) {
@@ -72,13 +72,12 @@ public class MessageHandler {
                 .build(repository.deleteAll());
     }
 
-    public Mono<ServerResponse> getMessageEvents(ServerRequest request) {
-        Flux<MessageEvent> messageEventFlux = Flux.interval(Duration.ofSeconds(1))
-                .map(val -> new MessageEvent(val, "Message Event")
-                );
+    public Mono<ServerResponse> getMessagesStream(ServerRequest request) {
+        Flux<Message> messageEventFlux = kafkaService.getEventPublisher()
+                .map(stringServerSentEvent -> kafkaService.jsonToMessage(stringServerSentEvent.data()));
         return ServerResponse.ok()
                 .contentType(TEXT_EVENT_STREAM)
-                .body(messageEventFlux, MessageEvent.class);
+                .body(messageEventFlux, Message.class);
     }
 
 }

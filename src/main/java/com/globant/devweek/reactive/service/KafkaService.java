@@ -4,10 +4,17 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.globant.devweek.reactive.domain.Message;
 import lombok.RequiredArgsConstructor;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.ConnectableFlux;
+import reactor.core.publisher.Mono;
 import reactor.kafka.receiver.KafkaReceiver;
+import reactor.kafka.sender.KafkaSender;
+import reactor.kafka.sender.SenderRecord;
 
 import javax.annotation.PostConstruct;
 
@@ -16,8 +23,12 @@ import javax.annotation.PostConstruct;
 public class KafkaService {
 
     private final KafkaReceiver<String, String> kafkaReceiver;
+    private final KafkaSender<String, String> kafkaSender;
     private ConnectableFlux<ServerSentEvent<String>> eventPublisher;
     private final ObjectMapper objectMapper;
+
+    @Value("${kafka.topic}")
+    private String topic;
 
 
     @PostConstruct
@@ -42,9 +53,28 @@ public class KafkaService {
         return message;
     }
 
-    public ServerSentEvent<Message> matchToServerSentEvent(Message message) {
-        return ServerSentEvent.<Message>builder()
-                .data(message)
-                .build();
+    public void saveMessage(Message message) {
+        kafkaSender.send(Mono.just(messageToSenderRecord(message)))
+                .next()
+                .log()
+                .subscribe();
+    }
+
+    public Mono<ServerResponse> messageToServerSentEvent(Message message) {
+        return ServerResponse.ok()
+                .contentType(MediaType.TEXT_EVENT_STREAM)
+                .body(message, Message.class);
+    }
+
+    private SenderRecord<String, String, String> messageToSenderRecord(Message message) {
+        String messageJsonStr;
+
+        try {
+            messageJsonStr = objectMapper.writeValueAsString(message);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
+        return SenderRecord.create(new ProducerRecord<>(topic, messageJsonStr), message.getId());
     }
 }
