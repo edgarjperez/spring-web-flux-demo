@@ -1,4 +1,4 @@
-package com.globant.devweek.reactive.handler;
+package com.globant.devweek.reactive.functional.endpoint;
 
 import com.globant.devweek.reactive.domain.Message;
 import com.globant.devweek.reactive.repository.MessageRepository;
@@ -20,6 +20,7 @@ public class MessageHandler {
 
     private final MessageRepository repository;
     private final KafkaService kafkaService;
+    private static final String from = "Functional Endpoint";
 
     public Mono<ServerResponse> getAllMessages(ServerRequest request) {
         Flux<Message> messages = repository.findAll();
@@ -39,12 +40,13 @@ public class MessageHandler {
 
     public Mono<ServerResponse> saveMessage(ServerRequest request) {
         return request.bodyToMono(Message.class)
-                .flatMap(repository::save)
                 .flatMap(message -> {
-                    kafkaService.saveMessage(message);
+                    message.setFrom(from);
                     return ServerResponse.status(CREATED)
                             .contentType(APPLICATION_JSON)
-                            .body(Mono.just(message), Message.class);
+                            .body(repository.save(message)
+                                            .doOnSuccess(kafkaService::saveMessage)
+                                    , Message.class);
                 });
     }
 
@@ -52,7 +54,7 @@ public class MessageHandler {
         Mono<Message> existingMessageMono = repository.findById(request.pathVariable("id"));
         return request.bodyToMono(Message.class)
                 .zipWith(existingMessageMono, ((message, existingMessage) ->
-                        new Message(message.getMessage())))
+                        new Message("", from, message.getMessage())))
                 .flatMap(message -> ServerResponse.ok()
                         .contentType(APPLICATION_JSON)
                         .body(repository.save(message), Message.class))

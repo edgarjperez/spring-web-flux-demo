@@ -14,11 +14,7 @@ public class Message {
 
     @Id
     private String id;
-    private String user;
+    private String from;
     private String message;
 
-    public Message(String message) {
-        this.user = "default";
-        this.message = message;
-    }
 }

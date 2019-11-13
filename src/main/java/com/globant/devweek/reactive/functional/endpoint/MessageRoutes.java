@@ -1,6 +1,5 @@
-package com.globant.devweek.reactive.routes;
+package com.globant.devweek.reactive.functional.endpoint;
 
-import com.globant.devweek.reactive.handler.MessageHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.RouterFunction;
