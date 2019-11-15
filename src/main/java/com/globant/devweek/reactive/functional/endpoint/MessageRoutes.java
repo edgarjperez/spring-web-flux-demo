@@ -10,7 +10,7 @@ import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpMethod.PUT;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static org.springframework.http.MediaType.TEXT_EVENT_STREAM;
+import static org.springframework.http.MediaType.APPLICATION_STREAM_JSON;
 import static org.springframework.web.reactive.function.server.RequestPredicates.DELETE;
 import static org.springframework.web.reactive.function.server.RequestPredicates.GET;
 import static org.springframework.web.reactive.function.server.RequestPredicates.*;
@@ -22,8 +22,8 @@ public class MessageRoutes {
 
     @Bean
     RouterFunction<ServerResponse> routes(MessageHandler handler) {
-        return nest(path("/messages"),
-                nest(accept(APPLICATION_JSON).or(contentType(APPLICATION_JSON).or(contentType(TEXT_EVENT_STREAM))),
+        return nest(path("/functional/messages"),
+                nest(accept(APPLICATION_JSON).or(contentType(APPLICATION_JSON).or(contentType(APPLICATION_STREAM_JSON))),
                         route(GET("/"), handler::getAllMessages)
                                 .andRoute(method(POST), handler::saveMessage)
                                 .andRoute(DELETE("/"), handler::deleteAllMessage)

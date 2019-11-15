@@ -7,7 +7,6 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Log4j2
@@ -27,7 +26,7 @@ public class MessageScheduler implements MessageService {
     public void deliverMessage() {
         log.info("Delivering test message");
         messageRepository.save(
-                new Message(UUID.randomUUID().toString(),
+                new Message(
                         "From Scheduler",
                         String.format("Test Message %d", counter.incrementAndGet()))
         ).doOnSuccess(kafkaService::saveMessage).subscribe();

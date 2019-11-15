@@ -12,7 +12,7 @@ import reactor.core.publisher.Mono;
 
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static org.springframework.http.MediaType.TEXT_EVENT_STREAM;
+import static org.springframework.http.MediaType.APPLICATION_STREAM_JSON;
 
 @Component
 @RequiredArgsConstructor
@@ -54,7 +54,7 @@ public class MessageHandler {
         Mono<Message> existingMessageMono = repository.findById(request.pathVariable("id"));
         return request.bodyToMono(Message.class)
                 .zipWith(existingMessageMono, ((message, existingMessage) ->
-                        new Message("", from, message.getMessage())))
+                        new Message( from, message.getMessage())))
                 .flatMap(message -> ServerResponse.ok()
                         .contentType(APPLICATION_JSON)
                         .body(repository.save(message), Message.class))
@@ -78,7 +78,7 @@ public class MessageHandler {
         Flux<Message> messageEventFlux = kafkaService.getConnectableFlux()
                 .map(stringServerSentEvent -> kafkaService.jsonToMessage(stringServerSentEvent.data()));
         return ServerResponse.ok()
-                .contentType(TEXT_EVENT_STREAM)
+                .contentType(APPLICATION_STREAM_JSON)
                 .body(messageEventFlux, Message.class);
     }
 

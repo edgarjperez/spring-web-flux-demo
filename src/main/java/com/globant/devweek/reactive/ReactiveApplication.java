@@ -21,9 +21,9 @@ public class ReactiveApplication {
     CommandLineRunner init(MessageRepository repository) {
         return args -> {
             Flux<Message> messageFlux = Flux.just(
-                    new Message("", "Command Line Runner", "First Message"),
-                    new Message("", "Command Line Runner", "Second Message"),
-                    new Message("", "Command Line Runner", "Third Message")
+                    new Message("Command Line Runner", "First Message"),
+                    new Message( "Command Line Runner", "Second Message"),
+                    new Message("Command Line Runner", "Third Message")
                     ).flatMap(repository::save);
 
             messageFlux
