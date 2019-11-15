@@ -24,7 +24,7 @@ public class KafkaService {
 
     private final KafkaReceiver<String, String> kafkaReceiver;
     private final KafkaSender<String, String> kafkaSender;
-    private ConnectableFlux<ServerSentEvent<String>> eventPublisher;
+    private ConnectableFlux<ServerSentEvent<String>> connectableFlux;
     private final ObjectMapper objectMapper;
 
     @Value("${kafka.topic}")
@@ -33,14 +33,14 @@ public class KafkaService {
 
     @PostConstruct
     public void init() {
-        eventPublisher = kafkaReceiver.receive()
+        connectableFlux = kafkaReceiver.receive()
                 .map(consumerRecord -> ServerSentEvent.builder(consumerRecord.value()).build())
                 .publish();
-        eventPublisher.connect();
+        connectableFlux.connect();
     }
 
-    public ConnectableFlux<ServerSentEvent<String>> getEventPublisher() {
-        return eventPublisher;
+    public ConnectableFlux<ServerSentEvent<String>> getConnectableFlux() {
+        return connectableFlux;
     }
 
     public Message jsonToMessage(String jsonStr) {

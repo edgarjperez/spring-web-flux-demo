@@ -75,7 +75,7 @@ public class MessageHandler {
     }
 
     public Mono<ServerResponse> getMessagesStream(ServerRequest request) {
-        Flux<Message> messageEventFlux = kafkaService.getEventPublisher()
+        Flux<Message> messageEventFlux = kafkaService.getConnectableFlux()
                 .map(stringServerSentEvent -> kafkaService.jsonToMessage(stringServerSentEvent.data()));
         return ServerResponse.ok()
                 .contentType(TEXT_EVENT_STREAM)
