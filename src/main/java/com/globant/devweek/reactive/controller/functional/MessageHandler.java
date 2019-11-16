@@ -1,4 +1,4 @@
-package com.globant.devweek.reactive.functional.endpoint;
+package com.globant.devweek.reactive.controller.functional;
 
 import com.globant.devweek.reactive.domain.Message;
 import com.globant.devweek.reactive.repository.MessageRepository;
@@ -41,10 +41,10 @@ public class MessageHandler {
     public Mono<ServerResponse> saveMessage(ServerRequest request) {
         return request.bodyToMono(Message.class)
                 .flatMap(message -> {
-                    message.setFrom(from);
+
                     return ServerResponse.status(CREATED)
                             .contentType(APPLICATION_JSON)
-                            .body(repository.save(message)
+                            .body(repository.save(new Message(from, message.getMessage()))
                                             .doOnSuccess(kafkaService::saveMessage)
                                     , Message.class);
                 });

@@ -1,4 +1,4 @@
-package com.globant.devweek.reactive.annotated.controller;
+package com.globant.devweek.reactive.controller.annotated;
 
 
 import com.globant.devweek.reactive.domain.Message;

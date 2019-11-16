@@ -1,4 +1,4 @@
-package com.globant.devweek.reactive.functional.endpoint;
+package com.globant.devweek.reactive.controller.functional;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;

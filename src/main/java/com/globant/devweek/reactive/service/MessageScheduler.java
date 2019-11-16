@@ -22,7 +22,7 @@ public class MessageScheduler implements MessageService {
     public void deliverMessage(String user, String message) {
     }
 
-    @Scheduled(fixedRate = 5000, initialDelay = 5000)
+    @Scheduled(fixedRate = 10000, initialDelay = 5000)
     public void deliverMessage() {
         log.info("Delivering test message");
         messageRepository.save(
